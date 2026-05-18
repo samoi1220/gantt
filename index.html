@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>工作排程甘特圖｜編輯版</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: "PingFang TC", "Helvetica Neue", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  background: #FAF8F4;
+  color: #2A2A2A;
+  padding: 28px 28px 60px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ===== Header ===== */
+.app-header {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  margin-bottom: 14px; border-bottom: 2px solid #2A2A2A; padding-bottom: 14px;
+  gap: 24px; flex-wrap: wrap;
+}
+.app-header .titles h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: 0.04em; cursor: text; }
+.app-header .titles .subtitle { color: #888; font-size: 12px; margin-top: 6px; cursor: text; }
+.app-header .titles .range { color: #888; font-size: 11px; margin-top: 4px; font-family: ui-monospace, monospace; }
+.legend {
+  display: flex; flex-wrap: wrap; gap: 6px 18px;
+  font-size: 11px; align-self: flex-end;
+}
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.swatch { width: 22px; height: 9px; border-radius: 2px; display: inline-block; }
+.swatch.ghost {
+  opacity: 0.5;
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(255,255,255,0.4) 3px, rgba(255,255,255,0.4) 6px);
+}
+
+/* ===== Tabs ===== */
+.tabs {
+  display: flex; gap: 4px; margin-bottom: 12px;
+  border-bottom: 1px solid #C8C2B6; flex-wrap: wrap;
+}
+.tab {
+  background: transparent; border: 1px solid transparent;
+  border-bottom: none; padding: 8px 18px;
+  font-family: inherit; font-size: 12px; cursor: pointer;
+  color: #888; letter-spacing: 0.04em;
+  border-radius: 2px 2px 0 0;
+  margin-bottom: -1px; transition: all 0.12s;
+}
+.tab:hover { color: #2A2A2A; background: #F5F2EC; }
+.tab.active {
+  background: white; border-color: #C8C2B6;
+  color: #2A2A2A; font-weight: 600;
+  border-bottom-color: white;
+}
+
+/* ===== Toolbar ===== */
+.toolbar {
+  display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+  background: white; padding: 10px 14px;
+  border: 1px solid #E5E0D8; margin-bottom: 14px;
+}
+.toolbar button {
+  font-family: inherit; font-size: 12px;
+  background: white; color: #2A2A2A;
+  border: 1px solid #C8C2B6; padding: 6px 12px;
+  border-radius: 2px; cursor: pointer;
+  letter-spacing: 0.04em; transition: all 0.12s;
+}
+.toolbar button:hover { background: #2A2A2A; color: white; border-color: #2A2A2A; }
+.toolbar button.primary { background: #2A2A2A; color: white; border-color: #2A2A2A; }
+.toolbar button.primary:hover { background: #4A4A4A; }
+.toolbar button.accent { background: #5B8C7E; color: white; border-color: #5B8C7E; }
+.toolbar button.accent:hover { background: #4A7569; }
+.toolbar button.danger:hover { background: #B05050; border-color: #B05050; }
+.toolbar .sep { width: 1px; background: #E5E0D8; margin: 4px 4px; align-self: stretch; }
+.toolbar .save-status {
+  margin-left: auto;
+  font-size: 11px; color: #5B8C7E;
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.02em; padding: 4px 8px;
+  background: #F0F4F2; border-radius: 2px;
+}
+.toolbar .save-status.error { color: #B05050; background: #FBE8E8; }
+
+/* ===== Chart ===== */
+.chart-container {
+  background: white; border: 1px solid #E5E0D8;
+  padding: 14px; overflow-x: auto;
+}
+.chart {
+  display: grid; font-size: 10px;
+}
+.corner-tl {
+  grid-row: 1; grid-column: 1;
+  background: #2A2A2A; color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600;
+  border-bottom: 1px solid #E5E0D8;
+  position: sticky; left: 0; z-index: 6;
+}
+.month {
+  grid-row: 1;
+  text-align: center; padding: 6px 0;
+  font-weight: 600; font-size: 12px;
+  background: #EEE9DF;
+  border-bottom: 1px solid #E5E0D8;
+  border-right: 1px solid #D8D2C6;
+  letter-spacing: 0.04em;
+}
+.corner {
+  grid-row: 2; grid-column: 1;
+  padding: 6px 12px; background: #FAF8F4;
+  border-right: 1px solid #E5E0D8;
+  border-bottom: 2px solid #2A2A2A;
+  font-size: 11px; color: #888;
+  display: flex; align-items: center;
+  position: sticky; left: 0; z-index: 6;
+}
+.day-header {
+  grid-row: 2;
+  text-align: center; padding: 4px 0 5px;
+  font-size: 9px; color: #999;
+  background: #FAF8F4;
+  border-right: 1px solid #F0EDE6;
+  border-bottom: 2px solid #2A2A2A;
+  line-height: 1.1;
+}
+.day-header .wd { display: block; font-size: 8px; opacity: 0.55; margin-top: 1px; }
+.day-header.weekend { background: #EAE5DC; }
+.day-header.today { background: #FFE4A0; color: #2A2A2A; font-weight: 700; }
+.day-header.holiday { background: #F2D8D2; color: #B05050; }
+
+.row-label {
+  padding: 8px 12px 8px 26px; background: white;
+  border-right: 1px solid #E5E0D8;
+  border-bottom: 1px solid #E5E0D8;
+  font-size: 12px; font-weight: 600;
+  display: flex; flex-direction: column; justify-content: center;
+  line-height: 1.35;
+  cursor: pointer;
+  position: sticky; left: 0; z-index: 5;
+  box-shadow: 1px 0 0 #E5E0D8;
+  transition: background 0.1s;
+}
+.row-label:hover { background: #F5F2EC; }
+.row-label.drop-above { box-shadow: 1px 0 0 #E5E0D8, 0 -3px 0 #C77B5C inset; }
+.row-label.drop-below { box-shadow: 1px 0 0 #E5E0D8, 0 -3px 0 #C77B5C; }
+.row-label.dragging { opacity: 0.4; }
+.row-label small {
+  font-size: 10px; color: #999;
+  font-weight: normal; margin-top: 2px;
+}
+.row-label .hours-tag {
+  display: inline-block; font-size: 10px;
+  background: #2A2A2A; color: white;
+  padding: 1px 6px; border-radius: 2px;
+  font-weight: 600; letter-spacing: 0.02em;
+  margin-left: 6px; font-family: ui-monospace, monospace;
+}
+.row-label .drag-handle {
+  position: absolute; left: 8px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px; color: #C8C2B6;
+  line-height: 1; user-select: none;
+  pointer-events: none;
+}
+.row-label:hover .drag-handle { color: #888; }
+.row-label .edit-hint {
+  position: absolute; right: 10px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px; color: #999; opacity: 0;
+  transition: opacity 0.15s;
+}
+.row-label:hover .edit-hint { opacity: 1; }
+
+.day-cell {
+  background: white;
+  border-right: 1px solid #F8F5EE;
+  border-bottom: 1px solid #F0EDE6;
+  min-height: 46px;
+}
+.day-cell.weekend { background: #F5F1E7; }
+.day-cell.today { background: #FFF9E8; }
+.day-cell.holiday { background: #FBEBE8; }
+
+.bar {
+  margin: 9px 1px;
+  border-radius: 2px;
+  padding: 0 7px;
+  color: white; font-size: 10.5px; font-weight: 500;
+  display: flex; align-items: center;
+  overflow: hidden; white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  z-index: 2; letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.bar:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.18); }
+.bar.ghost {
+  opacity: 0.55;
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.3) 4px, rgba(255,255,255,0.3) 8px);
+}
+.milestone {
+  align-self: center; justify-self: center;
+  font-size: 12px; z-index: 3;
+  color: #2A2A2A; font-weight: 700;
+  line-height: 1; cursor: pointer;
+  background: #FFE4A0;
+  padding: 4px 8px;
+  border-radius: 2px;
+  border: 1px solid #C8AC60;
+  white-space: nowrap;
+}
+.milestone:hover { background: #FFD66B; }
+
+/* ===== Load Row (每日工時負荷) ===== */
+.row-label.load-label {
+  background: #2A2A2A; color: white;
+  border-bottom: none;
+  box-shadow: 1px 0 0 #2A2A2A;
+}
+.row-label.load-label:hover { background: #3A3A3A; }
+.row-label.load-label small { color: #BBB; }
+.load-cell {
+  background: white;
+  border-right: 1px solid #F8F5EE;
+  border-top: 1px solid #2A2A2A;
+  border-bottom: 1px solid #E5E0D8;
+  min-height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 600;
+  font-family: ui-monospace, monospace;
+  color: #555;
+}
+.load-cell.weekend { background: #F5F1E7; color: #BBB; }
+.load-cell.load-rest    { color: #BBB; }
+.load-cell.load-light   { background: #E5F0E5; color: #4A6B4A; }
+.load-cell.load-normal  { background: #C5DFC5; color: #2A5A2A; }
+.load-cell.load-full    { background: #F4E4A8; color: #6A5028; }
+.load-cell.load-over    { background: #F4C8B8; color: #8A3A1A; }
+.load-cell.load-extreme { background: #E89888; color: white; }
+
+/* ===== Drawer ===== */
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.35);
+  z-index: 100; display: none;
+}
+.overlay.active { display: block; }
+.drawer {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: 460px; background: #FAF8F4;
+  border-left: 1px solid #C8C2B6;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.1);
+  transform: translateX(100%); transition: transform 0.25s ease;
+  z-index: 101;
+  display: flex; flex-direction: column;
+}
+.drawer.active { transform: translateX(0); }
+.drawer-header {
+  padding: 18px 22px;
+  border-bottom: 2px solid #2A2A2A;
+  display: flex; justify-content: space-between; align-items: center;
+  background: white;
+}
+.drawer-header h2 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: 0.04em; }
+.drawer-header .close {
+  background: none; border: none; font-size: 22px; cursor: pointer;
+  color: #888; padding: 0; line-height: 1;
+}
+.drawer-header .close:hover { color: #2A2A2A; }
+.drawer-body {
+  flex: 1; overflow-y: auto; padding: 20px 22px;
+}
+.drawer-footer {
+  padding: 14px 22px;
+  border-top: 1px solid #E5E0D8; background: white;
+  display: flex; gap: 8px; align-items: center;
+}
+
+/* ===== Form ===== */
+.form-group { margin-bottom: 16px; }
+.form-group label {
+  display: block; font-size: 11px; font-weight: 600;
+  color: #555; letter-spacing: 0.06em; margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.form-group input[type=text], .form-group input[type=date],
+.form-group input[type=number],
+.form-group select, .form-group textarea {
+  width: 100%; padding: 8px 10px;
+  border: 1px solid #C8C2B6; background: white;
+  font-family: inherit; font-size: 13px; border-radius: 2px;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  outline: none; border-color: #2A2A2A;
+}
+.form-row { display: flex; gap: 10px; }
+.form-row .form-group { flex: 1; }
+.form-hint {
+  font-size: 11px; color: #888;
+  margin-top: 4px; font-style: italic;
+}
+
+.color-palette { display: flex; gap: 6px; flex-wrap: wrap; }
+.color-chip {
+  width: 28px; height: 28px; border-radius: 2px;
+  cursor: pointer; border: 2px solid transparent;
+  transition: transform 0.1s;
+}
+.color-chip:hover { transform: scale(1.1); }
+.color-chip.selected { border-color: #2A2A2A; box-shadow: 0 0 0 1px white inset; }
+.color-custom { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.color-custom input[type=color] {
+  width: 36px; height: 28px; border: 1px solid #C8C2B6;
+  background: white; cursor: pointer; padding: 2px; border-radius: 2px;
+}
+.color-custom input[type=text] {
+  width: 100px; padding: 6px 8px;
+  border: 1px solid #C8C2B6; font-family: ui-monospace, monospace;
+  font-size: 12px; border-radius: 2px;
+}
+
+.bar-list { margin-top: 10px; }
+.bar-item {
+  background: white; border: 1px solid #E5E0D8;
+  padding: 12px; margin-bottom: 8px;
+  border-radius: 2px;
+}
+.bar-item-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px;
+}
+.bar-item-header .bar-type-tag {
+  font-size: 10px; padding: 2px 8px;
+  background: #2A2A2A; color: white;
+  border-radius: 2px; letter-spacing: 0.04em;
+}
+.bar-item .btn-remove {
+  background: none; border: none; color: #B05050;
+  cursor: pointer; font-size: 11px; padding: 2px 4px;
+}
+.bar-item .btn-remove:hover { text-decoration: underline; }
+
+.btn {
+  font-family: inherit; font-size: 12px;
+  padding: 7px 14px; border-radius: 2px;
+  cursor: pointer; letter-spacing: 0.04em;
+  border: 1px solid #C8C2B6; background: white;
+  transition: all 0.12s;
+}
+.btn:hover { background: #F5F2EC; }
+.btn.primary { background: #2A2A2A; color: white; border-color: #2A2A2A; }
+.btn.primary:hover { background: #4A4A4A; }
+.btn.danger { color: #B05050; border-color: #D8C0B8; }
+.btn.danger:hover { background: #B05050; color: white; border-color: #B05050; }
+.btn.small { padding: 5px 10px; font-size: 11px; }
+.btn.full { width: 100%; }
+
+.holiday-list .bar-item { padding: 10px 12px; }
+.holiday-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.holiday-row input { flex: 1; }
+
+.empty {
+  text-align: center; color: #999; padding: 32px 20px;
+  background: white; border: 1px dashed #C8C2B6;
+  margin-top: 12px; font-size: 12px;
+}
+
+.snapshot-item {
+  padding: 12px 14px; margin-bottom: 8px;
+  background: white; border: 1px solid #E5E0D8;
+  border-radius: 2px;
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; transition: background 0.12s;
+}
+.snapshot-item:hover { background: #FAF8F4; }
+.snapshot-meta { flex: 1; min-width: 0; }
+.snapshot-label {
+  font-weight: 600; font-size: 13px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.snapshot-time {
+  color: #999; font-size: 11px; margin-top: 3px;
+  font-family: ui-monospace, monospace;
+}
+.snapshot-tag {
+  display: inline-block; font-size: 10px;
+  padding: 1px 6px; border-radius: 2px;
+  background: #EEE9DF; color: #555;
+  margin-left: 6px; letter-spacing: 0.04em;
+}
+
+/* ===== Stats Drawer ===== */
+.stats-section { margin-bottom: 24px; }
+.stats-section h3 {
+  margin: 0 0 10px;
+  font-size: 13px; font-weight: 600;
+  letter-spacing: 0.06em;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #E5E0D8;
+}
+.stats-cards {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.stats-card {
+  padding: 14px;
+  background: white;
+  border: 1px solid #E5E0D8;
+  border-radius: 2px;
+}
+.stats-card .label {
+  font-size: 10px; color: #888;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.stats-card .value {
+  font-size: 22px; font-weight: 600;
+  font-family: ui-monospace, "Helvetica Neue", monospace;
+  line-height: 1.2;
+}
+.stats-card .unit {
+  font-size: 11px; color: #888; margin-left: 4px;
+}
+.stats-card.accent { background: #2A2A2A; color: white; border-color: #2A2A2A; }
+.stats-card.accent .label { color: #BBB; }
+.stats-card.warn { background: #FBF3E8; border-color: #C8AC60; }
+.stats-card.over { background: #FBE8E8; border-color: #B05050; }
+
+.stats-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 12px; background: white;
+  border: 1px solid #E5E0D8;
+}
+.stats-table th, .stats-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #F0EDE6;
+}
+.stats-table th {
+  background: #FAF8F4;
+  font-weight: 600; font-size: 11px;
+  letter-spacing: 0.04em;
+  color: #555;
+}
+.stats-table td.num {
+  text-align: right;
+  font-family: ui-monospace, monospace;
+}
+.stats-table tr.over td { background: #FBE8E8; }
+.stats-table tr.full td { background: #FBF3E8; }
+.stats-table .swatch-sm {
+  width: 10px; height: 10px;
+  display: inline-block; border-radius: 1px;
+  margin-right: 6px; vertical-align: middle;
+}
+
+@media print {
+  body { padding: 0; background: white; }
+  .toolbar, .overlay, .drawer, .tabs,
+  .app-header .titles .range,
+  .row-label .edit-hint, .row-label .drag-handle { display: none !important; }
+  .chart-container { border: none; padding: 0; overflow: visible; }
+  .row-label { cursor: default; padding-left: 12px; position: static; box-shadow: none; }
+  .bar, .milestone { cursor: default; }
+  .corner-tl, .corner { position: static; }
+}
+
+.toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(120%);
+  background: #2A2A2A; color: white;
+  padding: 10px 20px; border-radius: 3px;
+  font-size: 12px; letter-spacing: 0.04em;
+  transition: transform 0.25s ease;
+  z-index: 200; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="titles">
+    <h1 id="title" contenteditable="true" spellcheck="false">工作排程甘特圖</h1>
+    <div class="subtitle" id="subtitle" contenteditable="true" spellcheck="false">梅子｜平面設計</div>
+    <div class="range" id="range-display"></div>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><span class="swatch" style="background:#FFE4A0"></span>今天</div>
+    <div class="legend-item"><span class="swatch ghost" style="background:#888"></span>客戶反應 / 校稿</div>
+    <div class="legend-item"><span class="swatch" style="background:#F2D8D2"></span>假日</div>
+    <div class="legend-item"><span class="swatch" style="background:#C5DFC5"></span>正常負荷</div>
+    <div class="legend-item"><span class="swatch" style="background:#F4E4A8"></span>滿載</div>
+    <div class="legend-item"><span class="swatch" style="background:#E89888"></span>超載</div>
+  </div>
+</div>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="toolbar">
+  <button class="primary" onclick="openProjectEditor()">+ 新增專案</button>
+  <button onclick="openSettings()">⚙ 設定</button>
+  <button class="accent" onclick="openStats()">📊 工時統計</button>
+  <div class="sep"></div>
+  <button onclick="exportJSON()">↓ 匯出 JSON</button>
+  <button onclick="document.getElementById('import-input').click()">↑ 匯入 JSON</button>
+  <input type="file" id="import-input" accept=".json" style="display:none" onchange="importJSON(event)">
+  <button onclick="window.print()">🖨 列印 / 存 PDF</button>
+  <div class="sep"></div>
+  <button onclick="openSnapshots()">🕐 歷史版本</button>
+  <div class="sep"></div>
+  <button class="danger" onclick="resetToDefault()">↺ 還原預設</button>
+  <button class="danger" onclick="clearAll()">✕ 清空</button>
+  <div class="save-status" id="save-status">●</div>
+</div>
+
+<div class="chart-container">
+  <div class="chart" id="chart"></div>
+</div>
+
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-header">
+    <h2 id="drawer-title">編輯專案</h2>
+    <button class="close" onclick="closeDrawer()">×</button>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+  <div class="drawer-footer" id="drawer-footer"></div>
+</aside>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================
+ *  STATE & STORAGE
+ * ============================================ */
+const STORAGE_KEY = 'gantt_designer_v1';
+const SNAP_KEY    = 'gantt_snapshots_v1';
+const MAX_SNAPS   = 20;
+
+const PALETTE = [
+  '#C77B5C','#5B8C7E','#7D8FA8','#B89968','#8E7CA8',
+  '#4A6B7C','#D4A574','#A86A6A','#6A8C6A','#6A6A6A'
+];
+
+const DEFAULT_DATA = {
+  meta: {
+    title: '工作排程甘特圖',
+    subtitle: '梅子｜平面設計',
+    startDate: '2026-05-12',
+    endDate: '2026-07-31',
+    dayWidth: 22,
+    dailyCapacity: 6,
+    weeklyCapacity: 30,
+    hourlyRate: 1500,
+    currency: 'NT$'
+  },
+  viewYear: 'all',
+  holidays: [{ date: '2026-06-19', name: '端午節' }],
+  projects: [
+    { id: uid(), name: '廣告稿改稿', sub: '進稿 → 1工作天交稿', color: '#C77B5C',
+      bars: [{ id: uid(), type:'task', start:'2026-05-14', end:'2026-05-15', text:'改稿 5/14→5/15', hours: 4 }]},
+    { id: uid(), name: 'A 永續報告書', sub: '封面封底2款 + 內頁1款 提案', color: '#5B8C7E',
+      bars: [
+        { id: uid(), type:'task', start:'2026-05-12', end:'2026-05-25', text:'A 提案設計 5/12→5/25', hours: 50 },
+        { id: uid(), type:'wait', start:'2026-05-26', end:'2026-07-30', text:'客戶反應 / 校稿期', hours: 8 },
+        { id: uid(), type:'milestone', start:'2026-07-31', end:'2026-07-31', text:'★ 結案', hours: 0 }
+      ]},
+    { id: uid(), name: 'B 永續報告書', sub: '封面封底2款 + 內頁1款 提案', color: '#7D8FA8',
+      bars: [
+        { id: uid(), type:'task', start:'2026-05-12', end:'2026-05-29', text:'B 提案設計 5/12→5/29', hours: 60 },
+        { id: uid(), type:'wait', start:'2026-05-30', end:'2026-07-30', text:'客戶反應 / 校稿期', hours: 8 },
+        { id: uid(), type:'milestone', start:'2026-07-31', end:'2026-07-31', text:'★ 結案', hours: 0 }
+      ]},
+    { id: uid(), name: 'C 永續報告書', sub: '正式排版 + 6月階段校稿', color: '#B89968',
+      bars: [
+        { id: uid(), type:'task', start:'2026-05-28', end:'2026-06-30', text:'C 正式排版 + 校稿 5/28→6/30', hours: 60 },
+        { id: uid(), type:'wait', start:'2026-07-01', end:'2026-07-30', text:'後續校稿', hours: 12 }
+      ]},
+    { id: uid(), name: 'D 永續報告書', sub: '中英文版正式排版', color: '#8E7CA8',
+      bars: [
+        { id: uid(), type:'milestone', start:'2026-05-29', end:'2026-05-29', text:'▼ 會議', hours: 2 },
+        { id: uid(), type:'task', start:'2026-06-01', end:'2026-07-10', text:'D 中英文排版 6/1→7/10', hours: 100 },
+        { id: uid(), type:'milestone', start:'2026-07-10', end:'2026-07-10', text:'★ 結案', hours: 0 }
+      ]},
+    { id: uid(), name: '中文版報紙', sub: '進稿 → 完稿交稿', color: '#4A6B7C',
+      bars: [
+        { id: uid(), type:'task', start:'2026-05-25', end:'2026-05-31', text:'排版+完稿', hours: 20 },
+        { id: uid(), type:'task', start:'2026-06-25', end:'2026-06-30', text:'排版+完稿', hours: 18 }
+      ]},
+    { id: uid(), name: '英文版報紙', sub: '進客戶公司排版（1日）', color: '#D4A574',
+      bars: [
+        { id: uid(), type:'task', start:'2026-05-21', end:'2026-05-21', text:'5/21', hours: 8 },
+        { id: uid(), type:'task', start:'2026-06-05', end:'2026-06-05', text:'6/5', hours: 8 },
+        { id: uid(), type:'task', start:'2026-06-21', end:'2026-06-21', text:'6/21⚠', hours: 8 }
+      ]},
+    { id: uid(), name: '其他事務', sub: '新客戶 · 郵件 · 線上課 · 看展 · 休息', color: '#B0B0B0',
+      bars: [{ id: uid(), type:'wait', start:'2026-05-12', end:'2026-07-31', text:'穿插每週空檔', hours: 0 }]}
+  ]
+};
+
+let state = loadState() || deepCopy(DEFAULT_DATA);
+migrateState();
+
+function uid() { return 'id_' + Math.random().toString(36).slice(2, 10); }
+function deepCopy(o) { return JSON.parse(JSON.stringify(o)); }
+
+function migrateState() {
+  if (!state.viewYear) state.viewYear = 'all';
+  if (!state.meta) state.meta = deepCopy(DEFAULT_DATA.meta);
+  if (state.meta.dailyCapacity == null) state.meta.dailyCapacity = 6;
+  if (state.meta.weeklyCapacity == null) state.meta.weeklyCapacity = 30;
+  if (state.meta.hourlyRate == null) state.meta.hourlyRate = 1500;
+  if (!state.meta.currency) state.meta.currency = 'NT$';
+  if (!state.holidays) state.holidays = [];
+  if (!state.projects) state.projects = [];
+  state.projects.forEach(p => {
+    if (!p.bars) p.bars = [];
+    p.bars.forEach(b => { if (b.hours == null) b.hours = 0; });
+  });
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    updateSaveStatus('saved');
+  } catch(e) {
+    updateSaveStatus('error');
+    console.error('Save failed:', e);
+  }
+}
+function loadState() {
+  try {
+    const s = localStorage.getItem(STORAGE_KEY);
+    return s ? JSON.parse(s) : null;
+  } catch(e) { return null; }
+}
+
+/* ============================================
+ *  SNAPSHOTS
+ * ============================================ */
+function saveSnapshot(label) {
+  try {
+    let snaps = [];
+    try { snaps = JSON.parse(localStorage.getItem(SNAP_KEY) || '[]'); } catch(e) {}
+    snaps.unshift({
+      ts: Date.now(),
+      label: label || '自動儲存',
+      projects: state.projects.length,
+      bars: state.projects.reduce((n, p) => n + p.bars.length, 0),
+      data: JSON.stringify(state)
+    });
+    while (snaps.length > MAX_SNAPS) snaps.pop();
+    localStorage.setItem(SNAP_KEY, JSON.stringify(snaps));
+  } catch(e) {
+    try {
+      let snaps = JSON.parse(localStorage.getItem(SNAP_KEY) || '[]').slice(0, 5);
+      snaps.unshift({ ts: Date.now(), label: label || '自動儲存',
+        projects: state.projects.length, bars: 0, data: JSON.stringify(state) });
+      localStorage.setItem(SNAP_KEY, JSON.stringify(snaps));
+    } catch(e2) { console.warn('Snapshot save failed', e2); }
+  }
+}
+function getSnapshots() {
+  try { return JSON.parse(localStorage.getItem(SNAP_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+let lastAutoSnap = 0;
+function autoSnapshot() {
+  if (Date.now() - lastAutoSnap < 10 * 60 * 1000) return;
+  lastAutoSnap = Date.now();
+  saveSnapshot('自動儲存');
+}
+
+/* ============================================
+ *  DATE UTILS
+ * ============================================ */
+function parseDate(str) {
+  const [y, m, d] = str.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+function fmtDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
+function diffDays(a, b) { return Math.round((b - a) / 86400000); }
+function isToday(d) {
+  const t = new Date(); t.setHours(0,0,0,0);
+  return d.getTime() === t.getTime();
+}
+function isHoliday(dateStr) {
+  return state.holidays.some(h => h.date === dateStr);
+}
+function isWorkingDay(date) {
+  const dow = date.getDay();
+  if (dow === 0 || dow === 6) return false;
+  if (isHoliday(fmtDate(date))) return false;
+  return true;
+}
+
+function getYearsInData() {
+  const start = parseDate(state.meta.startDate);
+  const end = parseDate(state.meta.endDate);
+  const years = [];
+  for (let y = start.getFullYear(); y <= end.getFullYear(); y++) years.push(y);
+  return years;
+}
+function getViewRange() {
+  const metaStart = parseDate(state.meta.startDate);
+  const metaEnd   = parseDate(state.meta.endDate);
+  if (state.viewYear === 'all' || !state.viewYear) {
+    return { start: metaStart, end: metaEnd };
+  }
+  const y = state.viewYear;
+  let s = new Date(y, 0, 1);
+  let e = new Date(y, 11, 31);
+  if (s < metaStart) s = metaStart;
+  if (e > metaEnd)   e = metaEnd;
+  return { start: s, end: e };
+}
+
+/* ============================================
+ *  HOURS CALCULATION
+ * ============================================ */
+function getBarWorkingDays(bar) {
+  if (bar.type === 'milestone') return 1;
+  let count = 0;
+  const start = parseDate(bar.start);
+  const end = parseDate(bar.end);
+  const cur = new Date(start);
+  while (cur <= end) {
+    if (isWorkingDay(cur)) count++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return count;
+}
+function getDailyHours(dateStr) {
+  const date = parseDate(dateStr);
+  let total = 0;
+  state.projects.forEach(p => {
+    p.bars.forEach(b => {
+      if (!b.hours) return;
+      const start = parseDate(b.start);
+      const end = parseDate(b.end);
+      if (date < start || date > end) return;
+      if (b.type === 'milestone') {
+        if (fmtDate(date) === b.start) total += b.hours;
+      } else {
+        if (!isWorkingDay(date)) return;
+        const wd = getBarWorkingDays(b);
+        if (wd > 0) total += b.hours / wd;
+      }
+    });
+  });
+  return total;
+}
+function getProjectTotalHours(project) {
+  return project.bars.reduce((sum, b) => sum + (b.hours || 0), 0);
+}
+function getLoadClass(hours, cap) {
+  if (hours <= 0) return 'load-rest';
+  const pct = hours / cap;
+  if (pct < 0.5) return 'load-light';
+  if (pct < 1) return 'load-normal';
+  if (pct < 1.5) return 'load-full';
+  if (pct < 2) return 'load-over';
+  return 'load-extreme';
+}
+function formatMoney(n) {
+  return state.meta.currency + Math.round(n).toLocaleString();
+}
+
+/* ============================================
+ *  TABS
+ * ============================================ */
+function renderTabs() {
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = '';
+  const years = getYearsInData();
+  if (years.length === 0) return;
+  const add = (label, value, active) => {
+    const t = document.createElement('button');
+    t.className = 'tab' + (active ? ' active' : '');
+    t.textContent = label;
+    t.onclick = () => { state.viewYear = value; saveState(); render(); };
+    tabs.appendChild(t);
+  };
+  if (years.length > 1) add('全部', 'all', state.viewYear === 'all');
+  years.forEach(y => add(`${y} 年`, y, state.viewYear === y));
+}
+
+/* ============================================
+ *  RENDER
+ * ============================================ */
+const WD = ['日','一','二','三','四','五','六'];
+
+function render() {
+  document.getElementById('title').textContent = state.meta.title;
+  document.getElementById('subtitle').textContent = state.meta.subtitle;
+
+  const yrs = getYearsInData();
+  if (state.viewYear !== 'all' && !yrs.includes(state.viewYear)) state.viewYear = 'all';
+
+  renderTabs();
+
+  const view = getViewRange();
+  const total = diffDays(view.start, view.end) + 1;
+
+  // Range display with quick totals
+  const totalHours = state.projects.reduce((s, p) => s + getProjectTotalHours(p), 0);
+  const totalCost = totalHours * (state.meta.hourlyRate || 0);
+  const allTotal = diffDays(parseDate(state.meta.startDate), parseDate(state.meta.endDate)) + 1;
+  document.getElementById('range-display').textContent =
+    `${state.viewYear === 'all'
+      ? `全部 ${state.meta.startDate} → ${state.meta.endDate}（${allTotal} 天）`
+      : `${state.viewYear} 年（${total} 天）`}　·　總工時 ${Math.round(totalHours)} h　·　總費用 ${formatMoney(totalCost)}`;
+
+  const chart = document.getElementById('chart');
+  chart.innerHTML = '';
+  const dw = state.meta.dayWidth || 22;
+  chart.style.gridTemplateColumns = `200px repeat(${total}, ${dw}px)`;
+  chart.style.minWidth = (200 + total * dw + 4) + 'px';
+
+  // Build days array
+  const days = [];
+  for (let i = 0; i < total; i++) {
+    const d = new Date(view.start);
+    d.setDate(d.getDate() + i);
+    days.push({
+      date: d, str: fmtDate(d),
+      day: d.getDate(), month: d.getMonth() + 1,
+      dow: d.getDay(),
+      isWeekend: d.getDay() === 0 || d.getDay() === 6,
+      isToday: isToday(d),
+      isHoliday: isHoliday(fmtDate(d))
+    });
+  }
+
+  // Corner TL
+  const cornerTL = document.createElement('div');
+  cornerTL.className = 'corner-tl';
+  cornerTL.textContent = '時程';
+  chart.appendChild(cornerTL);
+
+  // Months
+  const monthGroups = {};
+  days.forEach((d, i) => {
+    const key = `${d.date.getFullYear()}-${d.month}`;
+    if (!monthGroups[key]) monthGroups[key] = { start: i + 2, span: 0, label: `${d.month}月` };
+    monthGroups[key].span++;
+  });
+  Object.values(monthGroups).forEach(g => {
+    const el = document.createElement('div');
+    el.className = 'month';
+    el.style.gridColumn = `${g.start} / span ${g.span}`;
+    el.textContent = g.label;
+    chart.appendChild(el);
+  });
+
+  // Day axis corner
+  const corner = document.createElement('div');
+  corner.className = 'corner';
+  corner.textContent = '項目 / 日期';
+  chart.appendChild(corner);
+
+  // Day headers
+  days.forEach((d, i) => {
+    const el = document.createElement('div');
+    let cls = 'day-header';
+    if (d.isWeekend) cls += ' weekend';
+    if (d.isToday) cls += ' today';
+    if (d.isHoliday) cls += ' holiday';
+    el.className = cls;
+    el.style.gridColumn = `${i + 2}`;
+    el.innerHTML = `${d.day}<span class="wd">${WD[d.dow]}</span>`;
+    chart.appendChild(el);
+  });
+
+  // Project rows
+  let currentRow = 3;
+  state.projects.forEach(p => {
+    const projHours = getProjectTotalHours(p);
+    const projCost = projHours * (state.meta.hourlyRate || 0);
+    const hoursTag = projHours > 0
+      ? `<span class="hours-tag">${projHours}h${state.meta.hourlyRate > 0 ? ' · ' + formatMoney(projCost) : ''}</span>`
+      : '';
+
+    const label = document.createElement('div');
+    label.className = 'row-label';
+    label.style.gridRow = currentRow;
+    label.style.gridColumn = '1';
+    label.innerHTML = `<span class="drag-handle">⋮⋮</span>${escapeHtml(p.name)}${hoursTag}<small>${escapeHtml(p.sub || '')}</small><span class="edit-hint">點擊編輯 →</span>`;
+    setupRowDrag(label, p);
+    chart.appendChild(label);
+
+    days.forEach((d, i) => {
+      const cell = document.createElement('div');
+      let cls = 'day-cell';
+      if (d.isWeekend) cls += ' weekend';
+      if (d.isToday) cls += ' today';
+      if (d.isHoliday) cls += ' holiday';
+      cell.className = cls;
+      cell.style.gridRow = currentRow;
+      cell.style.gridColumn = `${i + 2}`;
+      chart.appendChild(cell);
+    });
+
+    p.bars.forEach(b => {
+      const sIdx = diffDays(view.start, parseDate(b.start)) + 1;
+      const eIdx = diffDays(view.start, parseDate(b.end)) + 1;
+      if (eIdx < 1 || sIdx > total) return;
+      const sCol = Math.max(1, sIdx) + 1;
+      const eCol = Math.min(total, eIdx) + 1;
+      const span = eCol - sCol + 1;
+
+      const bar = document.createElement('div');
+      if (b.type === 'milestone') {
+        bar.className = 'milestone';
+        bar.style.gridRow = currentRow;
+        bar.style.gridColumn = `${sCol}`;
+        bar.textContent = b.text || '★';
+      } else {
+        let cls = 'bar';
+        if (b.type === 'wait') cls += ' ghost';
+        bar.className = cls;
+        bar.style.background = p.color;
+        bar.style.gridRow = currentRow;
+        bar.style.gridColumn = `${sCol} / span ${span}`;
+        const wd = getBarWorkingDays(b);
+        const perDay = b.hours && wd ? (b.hours / wd).toFixed(1) : '0';
+        bar.textContent = b.text + (b.hours ? `（${b.hours}h / ${perDay}h每日）` : '');
+        bar.title = `${b.start} → ${b.end}\n${b.text || ''}\n${b.hours ? `預估 ${b.hours} 小時，${wd} 個工作天，平均 ${perDay} h/日` : '未估工時'}`;
+        if (isLight(p.color)) bar.style.color = '#3A2810';
+      }
+      bar.onclick = (e) => { e.stopPropagation(); openProjectEditor(p.id); };
+      chart.appendChild(bar);
+    });
+
+    currentRow++;
+  });
+
+  // ===== Load row at bottom =====
+  const loadRowIdx = currentRow;
+  const loadLabel = document.createElement('div');
+  loadLabel.className = 'row-label load-label';
+  loadLabel.style.gridRow = loadRowIdx;
+  loadLabel.style.gridColumn = '1';
+  loadLabel.innerHTML = `<span class="drag-handle" style="color:#666">📊</span>每日工時負荷<small>每日 ${state.meta.dailyCapacity} h 為基準</small>`;
+  loadLabel.onclick = () => openStats();
+  loadLabel.style.cursor = 'pointer';
+  chart.appendChild(loadLabel);
+
+  days.forEach((d, i) => {
+    const cell = document.createElement('div');
+    const hours = getDailyHours(d.str);
+    let cls = 'load-cell ' + getLoadClass(hours, state.meta.dailyCapacity);
+    if (d.isWeekend) cls += ' weekend';
+    cell.className = cls;
+    cell.style.gridRow = loadRowIdx;
+    cell.style.gridColumn = `${i + 2}`;
+    if (hours > 0 && !d.isWeekend) {
+      cell.textContent = hours.toFixed(1);
+      cell.title = `${d.str}\n${hours.toFixed(1)} 小時`;
+    } else if (hours > 0 && d.isWeekend) {
+      cell.textContent = hours.toFixed(1);
+      cell.title = `${d.str}（週末）\n${hours.toFixed(1)} 小時`;
+    }
+    chart.appendChild(cell);
+  });
+
+  saveState();
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+function isLight(hex) {
+  if (!hex || hex[0] !== '#') return false;
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000 > 175;
+}
+
+/* ============================================
+ *  DRAG & DROP
+ * ============================================ */
+let dragSrcId = null;
+let dragJust  = false;
+
+function setupRowDrag(label, p) {
+  label.draggable = true;
+  label.addEventListener('dragstart', e => {
+    dragSrcId = p.id;
+    label.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', p.id); } catch(_) {}
+  });
+  label.addEventListener('dragend', () => {
+    label.classList.remove('dragging');
+    document.querySelectorAll('.drop-above, .drop-below').forEach(el => {
+      el.classList.remove('drop-above', 'drop-below');
+    });
+    setTimeout(() => { dragSrcId = null; dragJust = false; }, 60);
+  });
+  label.addEventListener('dragover', e => {
+    if (!dragSrcId || dragSrcId === p.id) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const rect = label.getBoundingClientRect();
+    const before = (e.clientY - rect.top) < rect.height / 2;
+    label.classList.remove('drop-above', 'drop-below');
+    label.classList.add(before ? 'drop-above' : 'drop-below');
+  });
+  label.addEventListener('dragleave', () => {
+    label.classList.remove('drop-above', 'drop-below');
+  });
+  label.addEventListener('drop', e => {
+    e.preventDefault();
+    if (!dragSrcId || dragSrcId === p.id) return;
+    dragJust = true;
+    const rect = label.getBoundingClientRect();
+    const before = (e.clientY - rect.top) < rect.height / 2;
+    const srcIdx = state.projects.findIndex(x => x.id === dragSrcId);
+    const [moved] = state.projects.splice(srcIdx, 1);
+    let dstIdx = state.projects.findIndex(x => x.id === p.id);
+    if (!before) dstIdx++;
+    state.projects.splice(dstIdx, 0, moved);
+    saveSnapshot('調整順序');
+    saveState();
+    render();
+    toast('順序已調整');
+  });
+  label.addEventListener('click', () => {
+    if (dragJust) { dragJust = false; return; }
+    openProjectEditor(p.id);
+  });
+}
+
+/* ============================================
+ *  EDITOR DRAWER
+ * ============================================ */
+const drawer = document.getElementById('drawer');
+const overlay = document.getElementById('overlay');
+const drawerBody = document.getElementById('drawer-body');
+const drawerFooter = document.getElementById('drawer-footer');
+const drawerTitle = document.getElementById('drawer-title');
+
+function closeDrawer() { drawer.classList.remove('active'); overlay.classList.remove('active'); }
+function openDrawer() { drawer.classList.add('active'); overlay.classList.add('active'); }
+let editing = { type: null, project: null };
+
+function openProjectEditor(projectId = null) {
+  const isNew = !projectId;
+  const project = isNew
+    ? { id: uid(), name: '', sub: '', color: PALETTE[state.projects.length % PALETTE.length], bars: [] }
+    : deepCopy(state.projects.find(p => p.id === projectId));
+  editing = { type: 'project', project };
+  drawerTitle.textContent = isNew ? '新增專案' : '編輯專案';
+
+  drawerBody.innerHTML = `
+    <div class="form-group">
+      <label>專案名稱</label>
+      <input type="text" id="f-name" value="${escapeHtml(project.name)}" placeholder="例：C 永續報告書">
+    </div>
+    <div class="form-group">
+      <label>副標 / 說明</label>
+      <input type="text" id="f-sub" value="${escapeHtml(project.sub)}" placeholder="例：封面封底2款 + 內頁1款 提案">
+    </div>
+    <div class="form-group">
+      <label>顏色</label>
+      <div class="color-palette" id="palette"></div>
+      <div class="color-custom">
+        <input type="color" id="f-color-picker" value="${project.color}">
+        <input type="text" id="f-color-hex" value="${project.color}">
+        <span style="color:#999; font-size:11px;">點擊上方色塊或自訂</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>任務 (Bars)</label>
+      <div class="bar-list" id="bar-list"></div>
+      <button class="btn full small" onclick="addBar()" style="margin-top:8px;">+ 新增任務</button>
+    </div>
+  `;
+
+  const pal = document.getElementById('palette');
+  PALETTE.forEach(c => {
+    const chip = document.createElement('div');
+    chip.className = 'color-chip' + (c === project.color ? ' selected' : '');
+    chip.style.background = c;
+    chip.onclick = () => {
+      project.color = c;
+      document.getElementById('f-color-picker').value = c;
+      document.getElementById('f-color-hex').value = c;
+      pal.querySelectorAll('.color-chip').forEach(x => x.classList.remove('selected'));
+      chip.classList.add('selected');
+    };
+    pal.appendChild(chip);
+  });
+  document.getElementById('f-color-picker').oninput = (e) => {
+    project.color = e.target.value;
+    document.getElementById('f-color-hex').value = e.target.value;
+    pal.querySelectorAll('.color-chip').forEach(x => x.classList.remove('selected'));
+  };
+  document.getElementById('f-color-hex').onchange = (e) => {
+    const v = e.target.value.trim();
+    if (/^#[0-9A-Fa-f]{6}$/.test(v)) {
+      project.color = v;
+      document.getElementById('f-color-picker').value = v;
+    }
+  };
+
+  renderBarList();
+
+  drawerFooter.innerHTML = `
+    ${isNew ? '' : '<button class="btn danger" onclick="deleteProject()">刪除專案</button>'}
+    <div style="flex:1"></div>
+    <button class="btn" onclick="closeDrawer()">取消</button>
+    <button class="btn primary" onclick="saveProject()">儲存</button>
+  `;
+  openDrawer();
+  setTimeout(() => document.getElementById('f-name').focus(), 200);
+}
+
+function renderBarList() {
+  const list = document.getElementById('bar-list');
+  const project = editing.project;
+  list.innerHTML = '';
+  if (project.bars.length === 0) {
+    list.innerHTML = '<div class="empty">尚未新增任務，按下方按鈕新增</div>';
+    return;
+  }
+  project.bars.forEach((b, idx) => {
+    const item = document.createElement('div');
+    item.className = 'bar-item';
+    const typeLabel = { task:'提案 / 執行 / 結案', wait:'客戶反應 / 校稿', milestone:'里程碑' }[b.type] || b.type;
+    // Compute working days preview
+    let preview = '';
+    if (b.start && b.end) {
+      try {
+        const wd = getBarWorkingDays(b);
+        const perDay = b.hours && wd ? (b.hours / wd).toFixed(1) : '0';
+        const cost = (b.hours || 0) * (state.meta.hourlyRate || 0);
+        preview = `${wd} 工作天　${perDay} h/日　${state.meta.hourlyRate > 0 ? formatMoney(cost) : ''}`;
+      } catch(e) {}
+    }
+    item.innerHTML = `
+      <div class="bar-item-header">
+        <span class="bar-type-tag">${typeLabel}</span>
+        <button class="btn-remove" data-idx="${idx}">✕ 移除</button>
+      </div>
+      <div class="form-group">
+        <label>類型</label>
+        <select data-field="type" data-idx="${idx}">
+          <option value="task" ${b.type==='task'?'selected':''}>提案 / 執行 / 結案（彩色塊）</option>
+          <option value="wait" ${b.type==='wait'?'selected':''}>客戶反應 / 校稿（斜紋淡色）</option>
+          <option value="milestone" ${b.type==='milestone'?'selected':''}>里程碑（單日標記）</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>開始日期</label>
+          <input type="date" data-field="start" data-idx="${idx}" value="${b.start}">
+        </div>
+        <div class="form-group" style="${b.type==='milestone'?'display:none':''}">
+          <label>結束日期</label>
+          <input type="date" data-field="end" data-idx="${idx}" value="${b.end}">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>預估總工時（小時）</label>
+          <input type="number" data-field="hours" data-idx="${idx}" value="${b.hours || 0}" step="0.5" min="0">
+        </div>
+        <div class="form-group">
+          <label>顯示文字</label>
+          <input type="text" data-field="text" data-idx="${idx}" value="${escapeHtml(b.text)}" placeholder="例：排版+完稿">
+        </div>
+      </div>
+      <div class="form-hint">${preview}</div>
+    `;
+    list.appendChild(item);
+  });
+
+  list.querySelectorAll('[data-field]').forEach(el => {
+    el.oninput = el.onchange = (e) => {
+      const idx = +e.target.dataset.idx;
+      const field = e.target.dataset.field;
+      const val = field === 'hours' ? (parseFloat(e.target.value) || 0) : e.target.value;
+      project.bars[idx][field] = val;
+      if (field === 'type' && e.target.value === 'milestone') {
+        project.bars[idx].end = project.bars[idx].start;
+      }
+      if (['type','start','end','hours'].includes(field)) renderBarList();
+    };
+  });
+  list.querySelectorAll('.btn-remove').forEach(b => {
+    b.onclick = () => {
+      project.bars.splice(+b.dataset.idx, 1);
+      renderBarList();
+    };
+  });
+}
+
+function addBar() {
+  const project = editing.project;
+  const today = fmtDate(new Date());
+  project.bars.push({ id: uid(), type: 'task', start: today, end: today, text: '', hours: 0 });
+  renderBarList();
+}
+
+function saveProject() {
+  const project = editing.project;
+  project.name = document.getElementById('f-name').value.trim();
+  project.sub  = document.getElementById('f-sub').value.trim();
+  if (!project.name) { toast('請輸入專案名稱'); return; }
+  project.bars.forEach(b => {
+    if (b.type === 'milestone') b.end = b.start;
+    if (parseDate(b.end) < parseDate(b.start)) b.end = b.start;
+    if (!b.hours) b.hours = 0;
+  });
+  saveSnapshot('編輯：' + project.name);
+  const existIdx = state.projects.findIndex(p => p.id === project.id);
+  if (existIdx >= 0) state.projects[existIdx] = project;
+  else state.projects.push(project);
+  const extended = autoExtendRange();
+  closeDrawer();
+  render();
+  toast(extended ? '已儲存，日期範圍已自動延伸' : '已儲存');
+}
+
+function autoExtendRange() {
+  if (state.projects.length === 0) return false;
+  let earliest = parseDate(state.meta.startDate);
+  let latest = parseDate(state.meta.endDate);
+  let extended = false;
+  state.projects.forEach(p => {
+    p.bars.forEach(b => {
+      if (!b.start) return;
+      const s = parseDate(b.start);
+      const e = parseDate(b.end || b.start);
+      if (s < earliest) { earliest = s; extended = true; }
+      if (e > latest)   { latest   = e; extended = true; }
+    });
+  });
+  if (extended) {
+    state.meta.startDate = fmtDate(earliest);
+    state.meta.endDate   = fmtDate(latest);
+  }
+  return extended;
+}
+
+function deleteProject() {
+  if (!confirm(`確定要刪除「${editing.project.name}」？`)) return;
+  saveSnapshot('刪除：' + editing.project.name);
+  state.projects = state.projects.filter(p => p.id !== editing.project.id);
+  closeDrawer();
+  render();
+  toast('已刪除');
+}
+
+/* ============================================
+ *  SETTINGS
+ * ============================================ */
+function openSettings() {
+  editing = { type: 'settings' };
+  drawerTitle.textContent = '設定';
+  drawerBody.innerHTML = `
+    <div class="form-group">
+      <label>標題</label>
+      <input type="text" id="s-title" value="${escapeHtml(state.meta.title)}">
+    </div>
+    <div class="form-group">
+      <label>副標</label>
+      <input type="text" id="s-subtitle" value="${escapeHtml(state.meta.subtitle)}">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>開始日期</label>
+        <input type="date" id="s-start" value="${state.meta.startDate}">
+      </div>
+      <div class="form-group">
+        <label>結束日期</label>
+        <input type="date" id="s-end" value="${state.meta.endDate}">
+      </div>
+    </div>
+    <div class="form-group" style="margin-top:-6px;">
+      <label>快速延伸結束日期</label>
+      <div style="display:flex; gap:6px; flex-wrap:wrap;">
+        <button class="btn small" type="button" onclick="extendEndDate(1)">+1 個月</button>
+        <button class="btn small" type="button" onclick="extendEndDate(3)">+3 個月</button>
+        <button class="btn small" type="button" onclick="extendEndDate(6)">+6 個月</button>
+        <button class="btn small" type="button" onclick="extendEndDate(12)">+1 年</button>
+        <button class="btn small" type="button" onclick="extendToYearEnd()">→ 年底</button>
+      </div>
+    </div>
+
+    <h3 style="margin:20px 0 10px; font-size:13px; padding-bottom:6px; border-bottom:1px solid #E5E0D8;">工時與費率</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>每日工時上限（h）</label>
+        <input type="number" id="s-daycap" value="${state.meta.dailyCapacity}" step="0.5" min="1">
+      </div>
+      <div class="form-group">
+        <label>每週工時上限（h）</label>
+        <input type="number" id="s-weekcap" value="${state.meta.weeklyCapacity}" step="1" min="1">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>時薪</label>
+        <input type="number" id="s-rate" value="${state.meta.hourlyRate}" step="50" min="0">
+      </div>
+      <div class="form-group">
+        <label>貨幣符號</label>
+        <input type="text" id="s-currency" value="${state.meta.currency}" placeholder="NT$">
+      </div>
+    </div>
+
+    <h3 style="margin:20px 0 10px; font-size:13px; padding-bottom:6px; border-bottom:1px solid #E5E0D8;">外觀</h3>
+    <div class="form-group">
+      <label>日格寬度 (px) — 預設 22</label>
+      <input type="number" id="s-dw" value="${state.meta.dayWidth}" min="10" max="60">
+    </div>
+
+    <h3 style="margin:20px 0 10px; font-size:13px; padding-bottom:6px; border-bottom:1px solid #E5E0D8;">國定假日</h3>
+    <div class="form-group">
+      <div class="holiday-list" id="holiday-list"></div>
+      <button class="btn full small" onclick="addHoliday()" style="margin-top:8px;">+ 新增假日</button>
+    </div>
+  `;
+  renderHolidayList();
+  drawerFooter.innerHTML = `
+    <div style="flex:1"></div>
+    <button class="btn" onclick="closeDrawer()">取消</button>
+    <button class="btn primary" onclick="saveSettings()">儲存</button>
+  `;
+  openDrawer();
+}
+
+function extendEndDate(months) {
+  const input = document.getElementById('s-end');
+  const d = parseDate(input.value);
+  d.setMonth(d.getMonth() + months);
+  input.value = fmtDate(d);
+}
+function extendToYearEnd() {
+  const input = document.getElementById('s-end');
+  const d = parseDate(input.value);
+  input.value = `${d.getFullYear()}-12-31`;
+}
+
+function renderHolidayList() {
+  const list = document.getElementById('holiday-list');
+  list.innerHTML = '';
+  if (state.holidays.length === 0) {
+    list.innerHTML = '<div class="empty">尚未新增假日</div>';
+    return;
+  }
+  state.holidays.forEach((h, idx) => {
+    const row = document.createElement('div');
+    row.className = 'holiday-row';
+    row.innerHTML = `
+      <input type="date" value="${h.date}" data-h-idx="${idx}" data-h-field="date">
+      <input type="text" value="${escapeHtml(h.name)}" data-h-idx="${idx}" data-h-field="name" placeholder="名稱">
+      <button class="btn small danger" data-rm="${idx}">✕</button>
+    `;
+    list.appendChild(row);
+  });
+  list.querySelectorAll('[data-h-field]').forEach(el => {
+    el.oninput = (e) => {
+      state.holidays[+e.target.dataset.hIdx][e.target.dataset.hField] = e.target.value;
+    };
+  });
+  list.querySelectorAll('[data-rm]').forEach(el => {
+    el.onclick = () => { state.holidays.splice(+el.dataset.rm, 1); renderHolidayList(); };
+  });
+}
+
+function addHoliday() {
+  state.holidays.push({ date: fmtDate(new Date()), name: '' });
+  renderHolidayList();
+}
+
+function saveSettings() {
+  saveSnapshot('修改設定');
+  state.meta.title    = document.getElementById('s-title').value.trim() || '工作排程甘特圖';
+  state.meta.subtitle = document.getElementById('s-subtitle').value.trim();
+  state.meta.startDate = document.getElementById('s-start').value;
+  state.meta.endDate   = document.getElementById('s-end').value;
+  state.meta.dailyCapacity = parseFloat(document.getElementById('s-daycap').value) || 6;
+  state.meta.weeklyCapacity = parseFloat(document.getElementById('s-weekcap').value) || 30;
+  state.meta.hourlyRate = parseFloat(document.getElementById('s-rate').value) || 0;
+  state.meta.currency = document.getElementById('s-currency').value.trim() || 'NT$';
+  const dw = parseInt(document.getElementById('s-dw').value);
+  if (!isNaN(dw) && dw >= 10 && dw <= 60) state.meta.dayWidth = dw;
+  state.holidays = state.holidays.filter(h => h.date);
+  closeDrawer();
+  render();
+  toast('設定已更新');
+}
+
+/* ============================================
+ *  STATS DRAWER
+ * ============================================ */
+function openStats() {
+  editing = { type: 'stats' };
+  drawerTitle.textContent = '工時統計 · 收入預估';
+  const view = getViewRange();
+  const days = [];
+  for (let d = new Date(view.start); d <= view.end; d.setDate(d.getDate() + 1)) {
+    days.push(new Date(d));
+  }
+  const dailyMap = days.map(d => ({ date: new Date(d), hours: getDailyHours(fmtDate(d)) }));
+
+  // Totals
+  const totalHours = state.projects.reduce((s, p) => s + getProjectTotalHours(p), 0);
+  const totalCost = totalHours * (state.meta.hourlyRate || 0);
+  const workedDays = dailyMap.filter(x => x.hours > 0 && isWorkingDay(x.date)).length;
+  const totalHoursInView = dailyMap.reduce((s, x) => s + x.hours, 0);
+  const avgPerWorkDay = workedDays > 0 ? totalHoursInView / workedDays : 0;
+
+  // Per project
+  const projectStats = state.projects.map(p => ({
+    name: p.name, color: p.color,
+    hours: getProjectTotalHours(p),
+    cost: getProjectTotalHours(p) * (state.meta.hourlyRate || 0)
+  })).filter(x => x.hours > 0).sort((a, b) => b.hours - a.hours);
+
+  // Per week
+  const weekMap = {};
+  dailyMap.forEach(({date, hours}) => {
+    if (hours <= 0) return;
+    const monday = new Date(date);
+    monday.setDate(monday.getDate() - (monday.getDay() + 6) % 7);
+    const key = fmtDate(monday);
+    if (!weekMap[key]) weekMap[key] = { monday: new Date(monday), hours: 0 };
+    weekMap[key].hours += hours;
+  });
+  const weekStats = Object.values(weekMap).sort((a, b) => a.monday - b.monday);
+
+  // Per month
+  const monthMap = {};
+  dailyMap.forEach(({date, hours}) => {
+    if (hours <= 0) return;
+    const key = `${date.getFullYear()}-${date.getMonth() + 1}`;
+    if (!monthMap[key]) monthMap[key] = { y: date.getFullYear(), m: date.getMonth() + 1, hours: 0, days: 0 };
+    monthMap[key].hours += hours;
+    monthMap[key].days++;
+  });
+  const monthStats = Object.values(monthMap).sort((a, b) => a.y - b.y || a.m - b.m);
+
+  // Overload weeks
+  const overloadWeeks = weekStats.filter(w => w.hours > state.meta.weeklyCapacity);
+  const overloadDays = dailyMap.filter(d => d.hours > state.meta.dailyCapacity).length;
+
+  drawerBody.innerHTML = `
+    <div class="stats-section">
+      <h3>總覽${state.viewYear !== 'all' ? `（${state.viewYear} 年）` : ''}</h3>
+      <div class="stats-cards">
+        <div class="stats-card">
+          <div class="label">總工時</div>
+          <div class="value">${Math.round(totalHoursInView)}<span class="unit">h</span></div>
+        </div>
+        <div class="stats-card accent">
+          <div class="label">總費用（時薪 ${formatMoney(state.meta.hourlyRate)}）</div>
+          <div class="value">${formatMoney(totalHoursInView * (state.meta.hourlyRate || 0))}</div>
+        </div>
+        <div class="stats-card ${avgPerWorkDay > state.meta.dailyCapacity ? 'over' : (avgPerWorkDay > state.meta.dailyCapacity * 0.8 ? 'warn' : '')}">
+          <div class="label">平均每日工時</div>
+          <div class="value">${avgPerWorkDay.toFixed(1)}<span class="unit">h（目標 ${state.meta.dailyCapacity}h）</span></div>
+        </div>
+        <div class="stats-card ${overloadWeeks.length > 0 ? 'warn' : ''}">
+          <div class="label">超載週數 / 超載日數</div>
+          <div class="value">${overloadWeeks.length}<span class="unit">週</span> / ${overloadDays}<span class="unit">日</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-section">
+      <h3>按專案分析（${projectStats.length} 個有工時）</h3>
+      ${projectStats.length === 0
+        ? '<div class="empty">尚未輸入任何工時</div>'
+        : `<table class="stats-table">
+            <thead><tr><th>專案</th><th class="num">工時</th><th class="num">費用</th><th class="num">佔比</th></tr></thead>
+            <tbody>
+              ${projectStats.map(p => `
+                <tr>
+                  <td><span class="swatch-sm" style="background:${p.color}"></span>${escapeHtml(p.name)}</td>
+                  <td class="num">${p.hours} h</td>
+                  <td class="num">${formatMoney(p.cost)}</td>
+                  <td class="num">${totalHours > 0 ? Math.round(p.hours/totalHours*100) : 0}%</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>`
+      }
+    </div>
+
+    <div class="stats-section">
+      <h3>按月收入預估（${monthStats.length} 個月）</h3>
+      ${monthStats.length === 0
+        ? '<div class="empty">尚未輸入任何工時</div>'
+        : `<table class="stats-table">
+            <thead><tr><th>月份</th><th class="num">工時</th><th class="num">工作日</th><th class="num">日均</th><th class="num">月收入</th></tr></thead>
+            <tbody>
+              ${monthStats.map(m => {
+                const monthAvg = m.days > 0 ? m.hours / m.days : 0;
+                const rowCls = monthAvg > state.meta.dailyCapacity ? 'over' : (monthAvg > state.meta.dailyCapacity * 0.8 ? 'full' : '');
+                return `<tr class="${rowCls}">
+                  <td>${m.y}/${String(m.m).padStart(2,'0')}</td>
+                  <td class="num">${Math.round(m.hours)} h</td>
+                  <td class="num">${m.days}</td>
+                  <td class="num">${monthAvg.toFixed(1)} h</td>
+                  <td class="num">${formatMoney(m.hours * (state.meta.hourlyRate || 0))}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>`
+      }
+    </div>
+
+    <div class="stats-section">
+      <h3>週負荷分析（目標 ${state.meta.weeklyCapacity} h/週）</h3>
+      ${weekStats.length === 0
+        ? '<div class="empty">尚未輸入任何工時</div>'
+        : `<table class="stats-table">
+            <thead><tr><th>週起 (週一)</th><th class="num">工時</th><th class="num">vs 目標</th><th>狀態</th></tr></thead>
+            <tbody>
+              ${weekStats.map(w => {
+                const diff = w.hours - state.meta.weeklyCapacity;
+                const ratio = w.hours / state.meta.weeklyCapacity;
+                const rowCls = ratio > 1.5 ? 'over' : (ratio > 1 ? 'over' : (ratio > 0.8 ? 'full' : ''));
+                const status = ratio > 1.5 ? '嚴重超載' : (ratio > 1 ? '超載' : (ratio > 0.8 ? '滿載' : (ratio > 0.5 ? '正常' : '輕鬆')));
+                return `<tr class="${rowCls}">
+                  <td>${fmtDate(w.monday)}</td>
+                  <td class="num">${w.hours.toFixed(1)} h</td>
+                  <td class="num">${diff > 0 ? '+' : ''}${diff.toFixed(1)} h</td>
+                  <td>${status}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>`
+      }
+    </div>
+
+    <div style="font-size:11px; color:#888; margin-top:16px; padding:12px; background:white; border:1px solid #E5E0D8;">
+      <strong>計算說明</strong>：每個任務輸入「預估總工時」後，系統會自動分配到該任務的工作日（週一至週五，扣除假日）。<br>
+      週末若有工作（如報紙在週日進客戶公司），會單獨計入該日工時但不算入週工時上限。<br>
+      時薪 × 預估工時 = 預估費用，僅供參考。
+    </div>
+  `;
+  drawerFooter.innerHTML = `<div style="flex:1"></div><button class="btn" onclick="closeDrawer()">關閉</button>`;
+  openDrawer();
+}
+
+/* ============================================
+ *  SNAPSHOTS UI
+ * ============================================ */
+function openSnapshots() {
+  editing = { type: 'snapshots' };
+  drawerTitle.textContent = '歷史版本';
+  const snaps = getSnapshots();
+  if (snaps.length === 0) {
+    drawerBody.innerHTML = '<div class="empty">尚無歷史版本<br><br>每次儲存、刪除、編輯都會自動建立快照</div>';
+  } else {
+    drawerBody.innerHTML = `
+      <div style="color:#666; font-size:11px; margin-bottom:14px; padding:8px 10px; background:#FBF6E8; border-left:3px solid #C8AC60;">
+        共 ${snaps.length} 個歷史版本（最多保留 20 個），點「還原」即可回到當時的狀態。
+      </div>
+      ${snaps.map(s => `
+        <div class="snapshot-item">
+          <div class="snapshot-meta">
+            <div class="snapshot-label">${escapeHtml(s.label)}<span class="snapshot-tag">${s.projects || 0} 案 · ${s.bars || 0} 任務</span></div>
+            <div class="snapshot-time">${new Date(s.ts).toLocaleString('zh-TW')}</div>
+          </div>
+          <button class="btn small" onclick="restoreSnapshot(${s.ts})">還原</button>
+        </div>
+      `).join('')}
+    `;
+  }
+  drawerFooter.innerHTML = `
+    <button class="btn small danger" onclick="clearSnapshots()">清除所有歷史</button>
+    <div style="flex:1"></div>
+    <button class="btn" onclick="closeDrawer()">關閉</button>
+  `;
+  openDrawer();
+}
+
+function restoreSnapshot(ts) {
+  const snap = getSnapshots().find(s => s.ts === ts);
+  if (!snap) return;
+  if (!confirm('確定還原至此版本？\n（目前狀態會自動建立快照備份）')) return;
+  saveSnapshot('還原前備份');
+  try {
+    state = JSON.parse(snap.data);
+    migrateState();
+    closeDrawer();
+    render();
+    toast('已還原');
+  } catch(e) {
+    toast('還原失敗：資料格式錯誤');
+  }
+}
+
+function clearSnapshots() {
+  if (!confirm('清除所有歷史版本？此動作無法復原。')) return;
+  localStorage.removeItem(SNAP_KEY);
+  openSnapshots();
+  toast('歷史版本已清除');
+}
+
+/* ============================================
+ *  EDITABLE TITLE
+ * ============================================ */
+document.getElementById('title').addEventListener('blur', e => {
+  state.meta.title = e.target.textContent.trim() || '工作排程甘特圖';
+  e.target.textContent = state.meta.title;
+  saveState();
+});
+document.getElementById('subtitle').addEventListener('blur', e => {
+  state.meta.subtitle = e.target.textContent.trim();
+  saveState();
+});
+[document.getElementById('title'), document.getElementById('subtitle')].forEach(el => {
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+  });
+});
+
+/* ============================================
+ *  EXPORT / IMPORT / RESET
+ * ============================================ */
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `gantt_${fmtDate(new Date())}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('JSON 已下載');
+}
+
+function importJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.meta || !Array.isArray(data.projects)) throw new Error('格式不正確');
+      if (!confirm('匯入會覆蓋目前資料（會先自動建立快照備份），確定？')) return;
+      saveSnapshot('匯入前備份');
+      state = data;
+      migrateState();
+      render();
+      toast('已匯入');
+    } catch(err) {
+      toast('匯入失敗：' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function resetToDefault() {
+  if (!confirm('還原為預設？目前的編輯會先自動建立快照備份。')) return;
+  saveSnapshot('還原預設前');
+  state = deepCopy(DEFAULT_DATA);
+  migrateState();
+  render();
+  toast('已還原為預設');
+}
+
+function clearAll() {
+  if (!confirm('清空所有專案？此動作會先自動建立快照備份，可從「歷史版本」還原。')) return;
+  saveSnapshot('清空前');
+  state.projects = [];
+  render();
+  toast('已清空');
+}
+
+/* ============================================
+ *  SAVE STATUS
+ * ============================================ */
+function updateSaveStatus(kind) {
+  const el = document.getElementById('save-status');
+  if (!el) return;
+  const time = new Date().toLocaleTimeString('zh-TW', {hour:'2-digit', minute:'2-digit'});
+  if (kind === 'error') {
+    el.textContent = '⚠ 儲存失敗';
+    el.className = 'save-status error';
+  } else {
+    el.textContent = `● 已儲存 ${time}`;
+    el.className = 'save-status';
+  }
+}
+
+setInterval(autoSnapshot, 60 * 1000);
+window.addEventListener('beforeunload', () => saveSnapshot('關閉視窗前'));
+
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+/* ============================================
+ *  GO
+ * ============================================ */
+saveSnapshot('啟動載入');
+render();
+</script>
+
+</body>
+</html>
